@@ -1,0 +1,32 @@
+.container {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 3rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 1.5rem;
+  input {
+    height: 3.5rem;
+    flex-grow: 1;
+    border-radius: 0.8rem;
+    padding: 0 1rem;
+  }
+  button {
+    flex-shrink: 0;
+    width: 5rem;
+    height: 4rem;
+    border-radius: 0.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline-color: transparent;
+  }
+}
