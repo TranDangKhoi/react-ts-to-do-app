@@ -4,18 +4,40 @@ import TaskInput from "../TaskInput";
 import TaskList from "../TaskList";
 import styles from "./todoList.module.scss";
 
+interface HandleNewTodos {
+  (todos: Todo[]): Todo[];
+}
+
+const syncReactToLocal = (handleNewTodos: HandleNewTodos) => {
+  const lcTodoList = localStorage.getItem("todos");
+  const todoObj: Todo[] = JSON.parse(lcTodoList || "[]");
+  const newTodoObj = handleNewTodos(todoObj);
+  localStorage.setItem("todos", JSON.stringify(newTodoObj));
+};
+
 function ToDoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [currentTask, setCurrentTask] = useState<Todo | null>(null);
   const doneTodos = todos.filter((todo) => todo.done);
   const onGoingTodos = todos.filter((todo) => !todo.done);
+
+  useEffect(() => {
+    const lcTodoList = localStorage.getItem("todos");
+    const todoObj: Todo[] = JSON.parse(lcTodoList || "[]");
+    setTodos(todoObj);
+  }, []);
+
   const addTodo = (name: string) => {
+    const handler = (todoObj: Todo[]) => {
+      return [...todoObj, todo];
+    };
     const todo: Todo = {
       name,
       done: false,
       id: new Date().toISOString()
     };
     setTodos((prevState: Todo[]) => [...prevState, todo]);
+    syncReactToLocal(handler);
   };
 
   const handleCheckTodo = (id: string, done: boolean) => {
@@ -44,20 +66,49 @@ function ToDoList() {
   };
 
   const finishEditTodo = () => {
-    setTodos((prev) => {
-      return prev.map((todo) => {
+    const handler = (todoObj: Todo[]) => {
+      return todoObj.map((todo) => {
         if (todo.id === currentTask?.id) {
           return currentTask;
         }
+        localStorage.setItem("todos", JSON.stringify(todo));
+
         return todo;
       });
-    });
+    };
+    setTodos(handler);
     setCurrentTask(null);
+    syncReactToLocal(handler);
   };
 
-  useEffect(() => {
-    console.log(todos);
-  }, [todos]);
+  const handleDeleteTodo = (id: string) => {
+    // Cách 1:
+    if (currentTask) {
+      setCurrentTask(null);
+    }
+    const newToDos = todos.filter((todo) => todo.id !== id);
+    if (newToDos) {
+      setTodos(newToDos);
+      localStorage.setItem("todos", JSON.stringify(newToDos));
+    }
+    // Cách 2:
+    // if (currentTask) {
+    //   setCurrentTask(null);
+    // }
+    // setTodos((prev) => {
+    //   const foundIndexTodo = prev.findIndex((todo) => todo.id === id);
+    //   if (foundIndexTodo > -1) {
+    //     const clonedResults = [...prev];
+    //     clonedResults.splice(foundIndexTodo, 1);
+    //     const lcTodoList = localStorage.getItem("todos");
+    //     const todoObj: Todo[] = JSON.parse(lcTodoList || "[]");
+    //     localStorage.setItem("todos", JSON.stringify(todoObj.splice(foundIndexTodo, 1)));
+    //     return clonedResults;
+    //   }
+    //   return prev;
+    // });
+  };
+
   return (
     <div className={styles.todoList}>
       <TaskInput
@@ -71,12 +122,14 @@ function ToDoList() {
         doneTaskList={false}
         handleCheckTodo={handleCheckTodo}
         startEditTask={startEditTodo}
+        handleDeleteTodo={handleDeleteTodo}
       ></TaskList>
       <TaskList
         todos={doneTodos}
         doneTaskList={true}
         handleCheckTodo={handleCheckTodo}
         startEditTask={startEditTodo}
+        handleDeleteTodo={handleDeleteTodo}
       ></TaskList>
     </div>
   );
